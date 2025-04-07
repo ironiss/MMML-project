@@ -1,5 +1,5 @@
 import torch.nn as nn
-from VectorQuantizer import VectorQuantizer
+from Vector_Quantizer import VectorQuantizer
 
 class MainEncoder(nn.Module):
     def __init__(self, in_channels=3, channels=128, num_res_blocks=2, codebook_size=8192, codebook_dim=256):
