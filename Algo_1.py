@@ -455,7 +455,7 @@ def train_vq_magan():
     ])
     
     dataset = FrameTripletDataset(root_dir="sequences_new", transform=transform)
-    dataloader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=20)
+    dataloader = DataLoader(dataset, batch_size=8, shuffle=True, num_workers=7)
     
     optimizer_G = optim.Adam(vq_magan.parameters(), lr=1e-4, betas=(0.5, 0.999))
     optimizer_D = optim.Adam(vq_magan.discriminator.parameters(), lr=1e-4, betas=(0.5, 0.999))
@@ -469,7 +469,7 @@ def train_vq_magan():
     lambda_vq = 1.0
     beta = 0.25
     
-    num_epochs = 50
+    num_epochs = 30
     for epoch in range(num_epochs):
         vq_magan.train()
         running_g_loss = 0.0
@@ -507,7 +507,9 @@ def train_vq_magan():
             I_0_pred_resized = F.interpolate(I_0_pred, size=I_0.shape[2:], mode='bilinear', align_corners=False)
             
             recon_loss = recon_criterion(I_0_pred_resized, I_0)
-            lpips_loss = vq_magan.lpips_loss(I_0_pred_resized, I_0).mean()
+            I_0_pred_resized_normalized = I_0_pred_resized / 255.0 * 2 - 1
+            I_0_normalized = I_0 / 255.0 * 2 - 1
+            lpips_loss = vq_magan.lpips_loss(I_0_pred_resized_normalized, I_0_normalized).mean()
             
             gen_pred = vq_magan.discriminator(I_0_pred_resized)
             gen_target = torch.ones_like(gen_pred).to(device)
