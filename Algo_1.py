@@ -7,7 +7,19 @@ from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
 
+
+import lpips
+
+from models.eventgan_trainer import EventGANTrainer
+from pytorch_utils.base_options import BaseOptions
+import configs
+
+import os
+from PIL import Image
+
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 class ResBlock(nn.Module):
     """Residual Block (ResBlk) as shown in the architecture"""
@@ -226,6 +238,7 @@ class EncoderWithFeatures(nn.Module):
         
         return enc_features, quantized, vq_loss, commitment_loss, encoding_indices, features
 
+
 class Decoder(nn.Module):
     """Decoder architecture with feature fusion from encoder"""
     def __init__(self, out_channels=3, hidden_dim=64):
@@ -361,12 +374,7 @@ class PatchDiscriminator(nn.Module):
     def forward(self, input):
         return self.model(input)
 
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from tqdm import tqdm
-import lpips
+
 
 class VQMAGAN(nn.Module):
     """VQ-MAGAN model that combines Encoder, Decoder and EventGAN"""
@@ -415,10 +423,7 @@ class VQMAGAN(nn.Module):
         
         return I_0_pred, vq_loss, commit_loss
 
-from models.eventgan_trainer import EventGANTrainer
-from pytorch_utils.base_options import BaseOptions
-import torch
-import configs
+
 
 def train_vq_magan():
 
@@ -536,24 +541,24 @@ def train_vq_magan():
         print(f"  G Loss: {epoch_g_loss:.4f}")
         print(f"  D Loss: {epoch_d_loss:.4f}")
         
-        if epoch % 5 == 0:
-            with torch.no_grad():
-                sample_batch = next(iter(dataloader))
-                I_minus1 = sample_batch["I_minus1"].to(device)[:1]
-                I_0 = sample_batch["I_0"].to(device)[:1]
-                I_plus1 = sample_batch["I_plus1"].to(device)[:1]
+        # if epoch % 5 == 0:
+        #     with torch.no_grad():
+        #         sample_batch = next(iter(dataloader))
+        #         I_minus1 = sample_batch["I_minus1"].to(device)[:1]
+        #         I_0 = sample_batch["I_0"].to(device)[:1]
+        #         I_plus1 = sample_batch["I_plus1"].to(device)[:1]
                 
-                I_0_pred, vq_loss, commit_loss = vq_magan(I_0, I_minus1, I_plus1, eventgan_model)
-                I_0_pred_resized = F.interpolate(I_0_pred, size=I_0.shape[2:], mode='bilinear', align_corners=False)
+        #         I_0_pred, vq_loss, commit_loss = vq_magan(I_0, I_minus1, I_plus1, eventgan_model)
+        #         I_0_pred_resized = F.interpolate(I_0_pred, size=I_0.shape[2:], mode='bilinear', align_corners=False)
                 
-                recon_loss = recon_criterion(I_0_pred_resized, I_0).item()
-                lpips_loss = vq_magan.lpips_loss(I_0_pred_resized, I_0).mean().item()
+        #         recon_loss = recon_criterion(I_0_pred_resized, I_0).item()
+        #         lpips_loss = vq_magan.lpips_loss(I_0_pred_resized, I_0).mean().item()
                 
-                print(f"  Detailed metrics:")
-                print(f"    Reconstruction loss: {recon_loss:.4f}")
-                print(f"    LPIPS loss: {lpips_loss:.4f}")
-                print(f"    VQ loss: {vq_loss.item():.4f}")
-                print(f"    Commitment loss: {commit_loss.item():.4f}")
+        #         print(f"  Detailed metrics:")
+        #         print(f"    Reconstruction loss: {recon_loss:.4f}")
+        #         print(f"    LPIPS loss: {lpips_loss:.4f}")
+        #         print(f"    VQ loss: {vq_loss.item():.4f}")
+        #         print(f"    Commitment loss: {commit_loss.item():.4f}")
         
         if (epoch + 1) % 10 == 0:
             torch.save({
@@ -571,10 +576,7 @@ def calculate_perceptual_loss(pred, target):
     return F.mse_loss(pred, target)
 
 
-import os
-from PIL import Image
-import numpy as np
-from torch.utils.data import Dataset
+
 
 class FrameTripletDataset(Dataset):
     """Dataset class for loading frame triplets from nested folder structure"""
