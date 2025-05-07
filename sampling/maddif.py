@@ -5,17 +5,24 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from training_encod_decod.VQMAGAN import VQMAGAN
-from EVENTGAN.models.eventgan_trainer import EventGANTrainer
-from EVENTGAN.pytorch_utils.base_options import BaseOptions
+
 import torch
-import configs
-from training_encod_decod.dataset_fix import FrameTripletDataset
 import torchvision.transforms as transforms
 import multiprocessing
 from torchvision.utils import save_image
 import math
 from .unet import UNet, device
+
+import sys
+import os.path as osp
+sys.path.append(osp.abspath(osp.join(osp.dirname(__file__), '..')))
+import configs
+
+from training_encod_decod.VQMAGAN import VQMAGAN
+from EVENTGAN.models.eventgan_trainer import EventGANTrainer
+from EVENTGAN.pytorch_utils.base_options import BaseOptions
+from training_encod_decod.dataset_fix import FrameTripletDataset
+
 
 
 class MADiff(nn.Module):
@@ -296,7 +303,7 @@ def train_madiff(vq_magan_checkpoint_path, eventgan_checkpoint_path):
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
     ])
     
-    dataset = FrameTripletDataset(root_dir="sequences_small", transform=transform)
+    dataset = FrameTripletDataset(root_dir="sampling/sequences", transform=transform)
     dataloader = DataLoader(dataset, batch_size=4, shuffle=True, num_workers=4)
     
     optimizer = optim.Adam(madiff.denoising_unet.parameters(), lr=1e-4)
@@ -356,8 +363,8 @@ def train_madiff(vq_magan_checkpoint_path, eventgan_checkpoint_path):
                 save_image(I_0_val[0], f"madiff_sample_val_epoch{epoch+1}.png")
 
 def main():
-    vq_magan_checkpoint_path = "vq_magan_checkpoint_epoch20.pt"
-    eventgan_checkpoint_path = "Weights.pt"
+    vq_magan_checkpoint_path = "sampling/vq_magan_checkpoint_epoch20.pt"
+    eventgan_checkpoint_path = "sampling/Weights.pt"
     
     train_madiff(vq_magan_checkpoint_path, eventgan_checkpoint_path)
 
